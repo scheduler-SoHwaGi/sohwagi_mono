@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - dev
     paths:
       - 'packages/frontend/**' 
 
@@ -28,8 +27,6 @@ jobs:
         run: |
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
             echo "${{ secrets.APPLICATION_ENV_PROD }}" | base64 --decode > .env
-          elif [ "${{ github.ref }}" = "refs/heads/dev" ]; then
-            echo "${{ secrets.APPLICATION_ENV_DEV }}" | base64 --decode > .env
           else
             echo "No environment file for this branch"
           fi
@@ -37,21 +34,16 @@ jobs:
       - name: Create output
         run: sh ./build.sh
 
-      - name: Extract branch name
-        id: extract_branch
-        run: echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
-
       - name: Push to another repository
-        id: push_directory
         uses: cpina/github-action-push-to-another-repository@main
         env:
           API_TOKEN_GITHUB: ${{ secrets.AUTO_ACTIONS }}
         with:
-          source-directory: "packages/frontend/output"
-          destination-github-username: "urimeee"
+          source-directory: "output"
+          destination-github-username: "OZIIJIN"
           destination-repository-name: "sohawgi_Front"
           user-email: ${{ secrets.EMAIL }}
           commit-message: |
             ${{ github.event.commits[0].message }} / ${{ github.run_id }}
-          target-branch: ${{ steps.extract_branch.outputs.branch }}
+          target-branch: main
           create-target-branch-if-needed: true
