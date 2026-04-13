@@ -1,0 +1,81 @@
+name: Deploy to Prod EC2
+
+on:
+  push:
+    branches:
+      - prod
+    paths:
+      - 'packages/backend/**'   
+
+defaults:
+  run:
+    working-directory: packages/backend 
+
+env:
+  AWS_REGION: ap-northeast-2
+  S3_BUCKET_NAME: sohwagi-bucket
+  CODE_DEPLOY_APPLICATION_NAME: sohwagi-codedeploy
+  CODE_DEPLOY_DEPLOYMENT_GROUP_NAME: production
+  GOOGLE_APPLICATION_CREDENTIALS: src/main/resources/firebase-service-account.json
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to Prod
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Cache Gradle deps & wrapper
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches/modules-2/files-2.1
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('packages/backend/**/*.gradle*','packages/backend/**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Create application.properties
+        run: |
+          mkdir -p ./src/main/resources
+          echo "${{ secrets.APPLICATION_PROD_PROPERTIES }}" > ./src/main/resources/application.properties
+
+      - name: Build with Gradle
+        run: ./gradlew clean build -x test
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Upload to S3
+        run: |
+          aws deploy push \
+            --application-name ${{ env.CODE_DEPLOY_APPLICATION_NAME }} \
+            --ignore-hidden-files \
+            --s3-location s3://${{ env.S3_BUCKET_NAME }}/$GITHUB_SHA.zip \
+            --source .
+
+      - name: Trigger CodeDeploy
+        run: |
+          aws deploy create-deployment \
+            --application-name ${{ env.CODE_DEPLOY_APPLICATION_NAME }} \
+            --deployment-group-name ${{ env.CODE_DEPLOY_DEPLOYMENT_GROUP_NAME }} \
+            --deployment-config-name CodeDeployDefault.AllAtOnce \
+            --s3-location bucket=${{ env.S3_BUCKET_NAME }},key=$GITHUB_SHA.zip,bundleType=zip
