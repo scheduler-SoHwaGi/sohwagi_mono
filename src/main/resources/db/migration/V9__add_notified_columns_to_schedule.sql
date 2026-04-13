@@ -1,0 +1,5 @@
+ALTER TABLE schedule
+ADD COLUMN notified_at DATETIME(6) NULL;
+
+ALTER TABLE schedule
+ADD COLUMN notified TINYINT(1) NULL;
