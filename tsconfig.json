@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "lib": [
+      "dom",
+      "esnext"
+    ],
+    "allowJs": true,
+    "jsx": "react-jsx",
+    "moduleResolution": "node",
+    "module": "esnext",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "typeRoots": [
+      "./node_modules/@types"
+    ],
+    "types": [
+      "vitest",
+      "node",
+      "vite/client"
+    ]
+  },
+  "include": [
+    "src",
+    "src/custom.d.ts",
+    ".eslintrc.cjs",
+    "node_modules/vitest/globals.d.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
