@@ -5,6 +5,12 @@ on:
     branches:
       - "main"
       - "dev"
+    paths:
+      - 'packages/frontend/**'
+
+defaults:
+  run:
+    working-directory: packages/frontend
 
 jobs:
   build:
@@ -41,7 +47,7 @@ jobs:
         env:
           API_TOKEN_GITHUB: ${{ secrets.AUTO_ACTIONS }}
         with:
-          source-directory: "output"
+          source-directory: "packages/frontend/output"
           destination-github-username: "urimeee"
           destination-repository-name: "sohawgi_Front"
           user-email: ${{ secrets.EMAIL }}
