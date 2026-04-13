@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*!* Pretendard 폰트 적용 *!*/
+@font-face {
+    font-family: 'Pretendard';
+    src: url('../public/fonts/PretendardVariable.woff2') format('woff2');
+    font-weight: 100 900;
+    font-display: swap;
+}
+
+@layer base {
+    html, body {
+        @apply font-pretendard no-scrollbar;
+
+    }
+
+    .body_01 {
+        @apply text-19 leading-[150%] font-semibold;
+    }
+
+    .body_02 {
+        @apply text-17 leading-[150%] font-semibold;
+    }
+
+    .body_03 {
+        @apply text-15 leading-[150%] font-semibold;
+    }
+
+    .body_04 {
+        @apply text-13 leading-[1rem] font-semibold;
+    }
+
+    .body_05 {
+        @apply text-13 leading-[150%];
+    }
+    .Content_01{
+        @apply text-17 leading-[150%];
+    }
+    .Content_02{
+        @apply text-15 leading-[150%];
+    }
+}
+
+@layer utilities {
+    .no-scrollbar {
+        -ms-overflow-style: none; /* IE, Edge */
+        scrollbar-width: none; /* Firefox */
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+        display: none; /* Chrome, Safari */
+    }
+}
+
+
+body {
+    -ms-overflow-style: none;
+}
+
+::-webkit-scrollbar {
+    display: none;
+}
