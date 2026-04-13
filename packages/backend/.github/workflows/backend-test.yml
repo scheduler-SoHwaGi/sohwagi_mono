@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - test
+    paths:
+      - 'packages/backend/**'
+
+defaults:
+  run:
+    working-directory: packages/backend
 
 env:
   AWS_REGION: ap-northeast-2
