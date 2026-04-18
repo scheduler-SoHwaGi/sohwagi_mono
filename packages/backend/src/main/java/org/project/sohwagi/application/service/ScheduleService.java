@@ -71,16 +71,10 @@ public class ScheduleService
   }
 
   public Map<String, List<Schedule>> getSchedulesGroupedByDate(ScheduleCountCommand cmd) {
-    int fromYmd = cmd.start().getYear() * 10000
-      + cmd.start().getMonthValue() * 100
-      + cmd.start().getDayOfMonth();
-    int toYmd = cmd.end().getYear() * 10000
-      + cmd.end().getMonthValue() * 100
-      + cmd.end().getDayOfMonth();
-    List<Schedule> schedules = scheduleRepository.findAllByUserIdAndYmdBetween(
+    List<Schedule> schedules = scheduleRepository.findAllByUserIdAndScheduleDateBetween(
       cmd.userId(),
-      fromYmd,
-      toYmd
+      cmd.start(),
+      cmd.end()
     );
     Map<String, List<Schedule>> grouped = schedules.stream()
       .collect(Collectors.groupingBy(s -> s.getDate().toString()));

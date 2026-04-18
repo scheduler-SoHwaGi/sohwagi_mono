@@ -1,6 +1,7 @@
 package org.project.sohwagi.domain;
 
 import jakarta.persistence.EntityNotFoundException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -38,8 +39,8 @@ public class UserRepository {
     return userJpaRepository.save(user);
   }
 
-  public List<User> findActiveUsersWithoutSchedulesBetweenYmd(int startYmd, int endYmd) {
-    return userJpaRepository.findActiveUsersWithoutSchedulesBetweenYmd(startYmd, endYmd);
+  public List<User> findActiveUsersWithoutSchedulesBetween(LocalDate start, LocalDate end) {
+    return userJpaRepository.findActiveUsersWithoutSchedulesBetween(start, end);
   }
 
   public List<User> findAllUserByIdIn(Set<Long> ids) {

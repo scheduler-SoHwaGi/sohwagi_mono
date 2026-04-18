@@ -18,10 +18,10 @@ public interface UserJpaRepository extends JpaRepository<User, Long> {
 
   @Query("SELECT u FROM User u WHERE u.isDeleted = false AND NOT EXISTS " +
       "(SELECT s FROM Schedule s WHERE s.userId = u.id AND " +
-      "(s.year * 10000 + s.month * 100 + s.day) BETWEEN :startYmd AND :endYmd)")
-  List<User> findActiveUsersWithoutSchedulesBetweenYmd(
-      @Param("startYmd") int startYmd,
-      @Param("endYmd") int endYmd);
+      "s.scheduleDate BETWEEN :start AND :end)")
+  List<User> findActiveUsersWithoutSchedulesBetween(
+      @Param("start") LocalDate start,
+      @Param("end") LocalDate end);
 
   List<User> findAllByIdIn(Set<Long> ids);
 

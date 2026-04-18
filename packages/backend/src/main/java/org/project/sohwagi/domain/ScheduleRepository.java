@@ -33,7 +33,7 @@ public interface ScheduleRepository {
         int day
     );
 
-    List<Schedule> findAllByUserIdAndYmdBetween(Long userId, int fromYmd, int toYmd);
+    List<Schedule> findAllByUserIdAndScheduleDateBetween(Long userId, LocalDate from, LocalDate to);
 
     List<Schedule> findSchedulesNotifiedAt(LocalDateTime from, LocalDateTime to);
 }

@@ -58,11 +58,7 @@ public class UserService {
   }
 
   public List<User> findUsersWithoutSchedulesInLastWeek(LocalDate today, LocalDate sevenDaysAgo) {
-    int startYmd = sevenDaysAgo.getYear() * 10000
-        + sevenDaysAgo.getMonthValue() * 100
-        + sevenDaysAgo.getDayOfMonth();
-    int endYmd = today.getYear() * 10000 + today.getMonthValue() * 100 + today.getDayOfMonth();
-    return userRepository.findActiveUsersWithoutSchedulesBetweenYmd(startYmd, endYmd);
+    return userRepository.findActiveUsersWithoutSchedulesBetween(sevenDaysAgo, today);
   }
 
   public List<User> findAllUserByIdIn(Set<Long> ids) {

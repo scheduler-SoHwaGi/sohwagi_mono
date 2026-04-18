@@ -60,6 +60,9 @@ public class Schedule {
   @Column
   private int year;
 
+  @Column(nullable = false)
+  private LocalDate scheduleDate;
+
   @Column
   private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -105,8 +108,8 @@ public class Schedule {
   }
   
   public LocalDate getDate() {
-		return LocalDate.of(this.year, this.month, this.day);
-	}
+    return this.scheduleDate;
+  }
 
   public void markAsNotified() {
     this.notified = true;
@@ -158,6 +161,7 @@ public class Schedule {
       this.amPm = amPm;
       this.dayOfWeek = dayOfWeek;
     }
+    this.scheduleDate = LocalDate.of(this.year, this.month, this.day);
   }
 
   private void notifiedAt(
