@@ -1,0 +1,52 @@
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: sohwagi
+      MYSQL_USER: sohwagi
+      MYSQL_PASSWORD: sohwagi
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+    volumes:
+      - benchmark_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: .
+    ports:
+      - "8080:8080"
+    cpus: 2.0
+    mem_limit: 2g
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: benchmark
+      SPRING_AI_VERTEX_AI_GEMINI_PROJECT_ID: benchmark-project
+      SPRING_AI_VERTEX_AI_GEMINI_LOCATION: us-central1
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/sohwagi?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: sohwagi
+      SPRING_DATASOURCE_PASSWORD: sohwagi
+      JWT_ACCESS_SECRET_KEY: MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=
+      JWT_REFRESH_SECRET_KEY: MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=
+      APPLE_SIGNIN_CLIENT_ID: benchmark
+      APPLE_SIGNIN_TEAM_ID: benchmark
+      APPLE_SIGNIN_KEY_ID: benchmark
+      APPLE_SIGNIN_AUDIENCE: https://appleid.apple.com
+      APPLE_SIGNIN_PRIVATE_KEY: benchmark
+      APPLE_SIGNIN_GRANT_TYPE: authorization_code
+      FirebaseKey: /run/secrets/firebase-service-account.json
+    secrets:
+      - firebase-service-account.json
+
+volumes:
+  benchmark_mysql:
+
+secrets:
+  firebase-service-account.json:
+    file: ./firebase-service-account.json.example
