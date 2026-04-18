@@ -56,8 +56,8 @@ public class OAuthService {
 
   @Transactional
   public void deleteAppleUser(DeleteUserCommand deleteUserCommand) {
+    cleanupUserData(deleteUserCommand.userDetails());
     revokeAppleAccess(deleteUserCommand.userDetails());
-    cleanupUserData(deleteUserCommand.userDetails(), deleteUserCommand.refreshToken());
   }
 
   public List<String> testLogin(String name) {
@@ -121,7 +121,7 @@ public class OAuthService {
     String refreshToken = jwtUtil.createRefreshToken(userId);
 
     RefreshTokenCommand command = new RefreshTokenCommand(refreshToken);
-    return tokenService.saveToken(command);
+    return tokenService.saveToken(command, userId);
   }
 
   private void revokeAppleAccess(UserDetails userDetails) {
@@ -131,13 +131,9 @@ public class OAuthService {
     appleCredentialService.deleteAppleCredential(appleCredential);
   }
 
-  private void cleanupUserData(UserDetails userDetails, String refreshToken) {
-    RefreshTokenCommand tokenCommand = RefreshTokenCommand.builder()
-        .refreshToken(refreshToken)
-        .build();
-    tokenService.expireToken(tokenCommand);
-
+  private void cleanupUserData(UserDetails userDetails) {
     Long userId = userDetails.id();
+    tokenService.expireAllTokensForUser(userId);
     scheduleService.deleteScheduleByUserRevoke(userId);
     userService.deleteUser(userDetails);
   }

@@ -1,17 +1,28 @@
 package org.project.sohwagi.infra.apple;
 
+import com.auth0.jwk.Jwk;
+import com.auth0.jwk.JwkException;
+import com.auth0.jwk.JwkProvider;
+import com.auth0.jwk.JwkProviderBuilder;
 import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import io.jsonwebtoken.JwsHeader;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import jakarta.annotation.PostConstruct;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.PrivateKey;
 import java.security.Security;
+import java.security.interfaces.RSAPublicKey;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -27,8 +38,7 @@ import org.springframework.http.MediaType;
 import static org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED_VALUE;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 @Slf4j
@@ -56,7 +66,20 @@ public class AppleClient {
   @Value("${apple.signin.grant.type}")
   private String grantType;
 
-  @Transactional
+  private JwkProvider jwkProvider;
+
+  @PostConstruct
+  private void init() {
+    try {
+      jwkProvider = new JwkProviderBuilder(new URL(audience + "/auth/keys"))
+          .cached(10, 24, TimeUnit.HOURS)
+          .rateLimited(10, 1, TimeUnit.MINUTES)
+          .build();
+    } catch (MalformedURLException e) {
+      throw new IllegalStateException("Invalid apple.signin.audience: " + audience, e);
+    }
+  }
+
   public AppleOAuthInfoRes getAppleOAuthInfo(AppleLoginCommand command) {
 
     HttpHeaders headers = new HttpHeaders();
@@ -75,15 +98,34 @@ public class AppleClient {
           AppleSocialTokenRes.class
       );
 
-      DecodedJWT decodedJWT = JWT.decode(Objects.requireNonNull(response.getBody()).idToken());
+      DecodedJWT decodedJWT = verifyIdToken(
+          Objects.requireNonNull(response.getBody()).idToken());
 
       return new AppleOAuthInfoRes(decodedJWT.getClaim("sub").asString(),
           decodedJWT.getClaim("email").asString(), response.getBody().refreshToken());
 
-    } catch (HttpClientErrorException e) {
-      log.error("Revoke failed: {}", e.getMessage());
+    } catch (HttpStatusCodeException e) {
+      log.error("Apple token request failed: {}", e.getMessage());
       throw new OAuthRequestException((HttpStatus) e.getStatusCode(),
           e.getMessage());
+    }
+  }
+
+  private DecodedJWT verifyIdToken(String idToken) {
+    try {
+      String tokenKeyId = JWT.decode(idToken).getKeyId();
+      Jwk jwk = jwkProvider.get(tokenKeyId);
+      Algorithm algorithm = Algorithm.RSA256((RSAPublicKey) jwk.getPublicKey(), null);
+
+      return JWT.require(algorithm)
+          .withIssuer(audience)
+          .withAudience(clientId)
+          .build()
+          .verify(idToken);
+    } catch (JwkException | JWTVerificationException e) {
+      log.error("Apple id_token verification failed: {}", e.getMessage());
+      throw new OAuthRequestException(HttpStatus.UNAUTHORIZED,
+          "Invalid apple id_token: " + e.getMessage());
     }
   }
 
@@ -95,19 +137,20 @@ public class AppleClient {
     HttpEntity<String> request = new HttpEntity<>(
         "client_id=" + clientId +
             "&client_secret=" + generateClientSecret() +
-            "&token=" + appleRefreshToken,
+            "&token=" + appleRefreshToken +
+            "&token_type_hint=refresh_token",
         headers
     );
 
     try {
-      ResponseEntity<Void> response = restTemplate.exchange(
+      restTemplate.exchange(
           audience + "/auth/revoke",
           HttpMethod.POST,
           request,
           Void.class
       );
       log.info("Revoke successful");
-    } catch (HttpClientErrorException e) {
+    } catch (HttpStatusCodeException e) {
       log.error("Revoke failed: {}", e.getMessage());
       throw new OAuthRequestException((HttpStatus) e.getStatusCode(), e.getMessage());
     }

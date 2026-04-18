@@ -11,6 +11,7 @@ import java.security.Key;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.Date;
+import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.project.sohwagi.common.TokenValidationResult;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,6 +24,7 @@ public class JwtUtil {
 
   public static final String AUTHORIZATION_HEADER = "X-ACCESS-TOKEN";
   public static final String BEARER_PREFIX = "Bearer ";
+  public static final int REFRESH_TOKEN_VALID_DAYS = 30;
   private final long TOKEN_TIME = 60 * 60 * 1000L; // 60분
 
   private final String INVALID_JWT_SIGNATURE = "Invalid JWT signature, 유효하지 않는 JWT 서명 입니다.";
@@ -64,10 +66,11 @@ public class JwtUtil {
 
   public String createRefreshToken(Long userId) {
     Date date = new Date();
-    Date expiration = new Date(date.getTime() + Duration.ofDays(30).toMillis());
+    Date expiration = new Date(date.getTime() + Duration.ofDays(REFRESH_TOKEN_VALID_DAYS).toMillis());
 
     return BEARER_PREFIX +
         Jwts.builder()
+            .setId(UUID.randomUUID().toString()) // 동일 사용자가 같은 초에 재로그인해도 토큰이 겹치지 않도록 보장
             .setSubject(String.valueOf(userId)) // 사용자 식별자값(ID)
             .setExpiration(expiration) // 만료 시간
             .setIssuedAt(date) // 발급일

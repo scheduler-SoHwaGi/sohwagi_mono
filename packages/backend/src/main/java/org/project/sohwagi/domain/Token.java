@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -23,14 +24,17 @@ public class Token {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column
-  private String refreshToken;
+  @Column(nullable = false)
+  private Long userId;
 
-  @Column
-  private boolean isExpired;
+  @Column(name = "refresh_token_hash", nullable = false)
+  private String refreshTokenHash;
 
-  public void expireToken() {
-    this.isExpired = true;
+  @Column(nullable = false)
+  private LocalDateTime expiresAt;
+
+  public boolean isExpired() {
+    return expiresAt.isBefore(LocalDateTime.now());
   }
 
 }
